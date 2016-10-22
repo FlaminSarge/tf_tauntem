@@ -5,7 +5,7 @@
 #include <tf2items>
 
 #pragma newdecls required
-#define PLUGIN_VERSION "1.0.1"
+#define PLUGIN_VERSION "1.0.2"
 
 public Plugin myinfo =
 {
@@ -129,7 +129,7 @@ public Action Cmd_Tauntem(int client, int args)
 	//if (args > 0)
 	//{
 	//	if (args > 1)
-	//	{	
+	//	{
 	GetCmdArg(2, arg1, sizeof(arg1));
 	itemdef = StringToInt(arg1);
 	//	}
@@ -161,12 +161,19 @@ public Action Cmd_Tauntem(int client, int args)
 		ReplyToCommand(client, "[SM] Couldn't create entity for taunt");
 		return Plugin_Handled;
 	}
-	Address pEconItemView = GetEntityAddress(ent) + view_as<Address>(FindSendPropInfo("CTFWearable", "m_Item"));
-	if (!IsValidAddress(pEconItemView))
+	int iCEIVOffset = GetEntSendPropOffs(ent, "m_Item", true);
+	if (iCEIVOffset <= 0)
 	{
-		ReplyToCommand(client, "[SM] Couldn't find CEconItemView for taunt");
+		ReplyToCommand(client, "[SM] Couldn't find m_Item for taunt item");
 		return Plugin_Handled;
 	}
+	Address pEconItemView = GetEntityAddress(ent);
+	if (!IsValidAddress(pEconItemView))
+	{
+		ReplyToCommand(client, "[SM] Couldn't find entity address for taunt item");
+		return Plugin_Handled;
+	}
+	pEconItemView += view_as<Address>(iCEIVOffset);
 	int successcount = 0;
 	for (int i = 0; i < target_count; i++)
 	{
@@ -196,7 +203,5 @@ stock int MakeCEIVEnt(int client, int itemdef, int particle=0)
 }
 stock bool IsValidAddress(Address pAddress)
 {
-	if (pAddress == Address_Null)	//yes the other one overlaps this but w/e
-		return false;
-	return ((pAddress & view_as<Address>(0x7FFFFFFF)) >= Address_MinimumValid);
+	return pAddress != Address_Null;
 }
