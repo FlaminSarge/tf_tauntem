@@ -111,9 +111,12 @@ public Action Cmd_Tauntem(int client, int args)
 {
 	char arg1[32];
 	int itemdef, particle;
+	float speed = -1.0;
+	float turn = -1.0;
+	bool mimic = false;
 	if (hPlayTaunt == INVALID_HANDLE)
 	{
-		ReplyToCommand(client, "[SM] Couldn't find call to CTFPlayer::PlayTauntSceneFromItem... what are you even doing here?");
+		ReplyToCommand(client, "[SM] Couldn't find call to CTFPlayer::PlayTauntSceneFromItem; a TF2 update probably broke it.");
 		return Plugin_Handled;
 	}
 	if (args < 2)
@@ -125,6 +128,21 @@ public Action Cmd_Tauntem(int client, int args)
 	{
 		GetCmdArg(3, arg1, sizeof(arg1));
 		particle = StringToInt(arg1);
+		if (args > 3 && CheckCommandAccess(client, "sm_tauntem_speedaccess", ADMFLAG_ROOT, true))
+		{
+			GetCmdArg(4, arg1, sizeof(arg1));
+			speed = StringToFloat(arg1);
+			if (args > 4)
+			{
+				GetCmdArg(5, arg1, sizeof(arg1));
+				turn = StringToFloat(arg1);
+				if (args > 5)
+				{
+					GetCmdArg(6, arg1, sizeof(arg1));
+					mimic = !StrEqual(arg1, "0");
+				}
+			}
+		}
 	}
 	//if (args > 0)
 	//{
@@ -155,7 +173,7 @@ public Action Cmd_Tauntem(int client, int args)
 		return Plugin_Handled;
 	}
 	int dummytarget = target_list[0];
-	int ent = MakeCEIVEnt(dummytarget, itemdef, particle);
+	int ent = MakeCEIVEnt(dummytarget, itemdef, particle, speed, turn, mimic);
 	if (!IsValidEntity(ent))
 	{
 		ReplyToCommand(client, "[SM] Couldn't create entity for taunt");
@@ -186,7 +204,7 @@ public Action Cmd_Tauntem(int client, int args)
 		ReplyToCommand(client, "[SM] Succeeded at forcing %d of %d targets (%s) to use taunt %d", successcount, target_count, target_name, itemdef);
 	return Plugin_Handled;
 }
-stock int MakeCEIVEnt(int client, int itemdef, int particle=0)
+stock int MakeCEIVEnt(int client, int itemdef, int particle=0, float speed=-1.0, float turn=-1.0, bool mimic=false)
 {
 	static Handle hItem;
 	if (hItem == INVALID_HANDLE)
@@ -197,8 +215,13 @@ stock int MakeCEIVEnt(int client, int itemdef, int particle=0)
 		TF2Items_SetLevel(hItem, 1);
 	}
 	TF2Items_SetItemIndex(hItem, itemdef);
-	TF2Items_SetNumAttributes(hItem, particle ? 1 : 0);
-	if (particle) TF2Items_SetAttribute(hItem, 0, 2041, float(particle));
+	int num_att = (particle ? 1 : 0) + (speed > 0 ? 1 : 0) + (turn > 0 ? 1 : 0);
+	TF2Items_SetNumAttributes(hItem, num_att);
+	int att_count = 0;
+	if (particle) TF2Items_SetAttribute(hItem, att_count++, 2041, float(particle));
+	if (speed > 0) TF2Items_SetAttribute(hItem, att_count++, 689, speed);
+	if (turn > 0) TF2Items_SetAttribute(hItem, att_count++, 646, turn);
+	if (mimic) TF2Items_SetAttribute(hItem, att_count++, 602, 1.0);
 	return TF2Items_GiveNamedItem(client, hItem);
 }
 stock bool IsValidAddress(Address pAddress)
