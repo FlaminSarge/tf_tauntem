@@ -37,7 +37,7 @@ public void OnPluginStart()
 		return;
 	}
 	CloseHandle(conf);
-	CreateConVar("tf_tauntem_version", PLUGIN_VERSION, "[TF2] Taunt 'em Version", FCVAR_NOTIFY|FCVAR_PLUGIN);
+	CreateConVar("tf_tauntem_version", PLUGIN_VERSION, "[TF2] Taunt 'em Version", FCVAR_NOTIFY);
 	LoadTranslations("common.phrases");
 	RegAdminCmd("sm_tauntem", Cmd_Tauntem, ADMFLAG_CHEATS);
 	RegConsoleCmd("sm_tauntem_list", Cmd_Tauntem_List);
